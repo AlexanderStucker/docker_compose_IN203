@@ -1,0 +1,37 @@
+version: "3.9"
+
+services: 
+  nginx:
+  #da wir ein eigenes Dockerfile haben können wir mit "build" darauf zugreifen
+    build: ./nginx-proxy
+    ports:
+      - 8080:80
+  #der service wird erst gestartet wenn das webapp gestartet wurde
+    depends_on:
+      - webapp
+    restart: always
+
+  webapp:
+  #da wir ein eigenes Dockerfile haben können wir mit "build" darauf zugreifen
+    build: ./flask-app 
+  #der service wird erst gestartet wenn die db gestartet wurde
+    depends_on:
+      - db  
+    restart: always
+  #durch deploy können wir 3 verschiedene instancen starten. Flask verteilt die nginx aufruge auf diese 3 instanzen 
+    deploy:
+      replicas: 3
+
+  db:
+  #Wir können das normale Image von redis verwenden
+    image: redis:latest
+  #Der standart port von Redis ist 6379. Dieser port wurde in der app.py ebenfalls verwendet. Expose the port:
+    expose: 
+      - 6379
+
+
+# Die yaml datei kreiert 3 services: nginx, flask & redis
+# Der aufruf localhost:8080 ist die defaulte seite
+# localhost:8080/visits zeigt an wieviele male die Website aufgerufen wurde (durch die verlinkung auf die DB)
+# localhost:8080/visits/reset setzt den counter auf 0
+#in der YAML-datei habe ich eine umgekehrte Reienfolge aufgeführt. DB wird zuerst gestaretet, danach das webapp zu letzt nginx. 
